@@ -1,103 +1,117 @@
-import Image from "next/image";
-
-export default function Home() {
+export default function HomePage() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
+    <>
+      <header className="bg-blue-900 text-white py-8 px-4">
+        <nav className="flex justify-between items-center mb-6">
+          <a href="#bout-section" className="text-lg font-bold hover:underline">
+            มหาวิทยาลัยกาฬสินธุ์
           </a>
+          <a href="#" className="text-white hover:underline">
+            หน้าหลัก
+          </a>
+        </nav>
+        <h1 className="text-3xl md:text-4xl font-bold text-center mb-2">
+          มหาวิทยาลัยกาฬสินธุ์
+        </h1>
+        <p className="text-center text-lg mb-4">
+          แหล่งรวมความรู้เพื่ออนาคตของคุณ
+        </p>
+        <div className="text-center">
           <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="#start-section"
+            className="inline-block bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-6 py-2 rounded shadow"
           >
-            Read our docs
+            เริ่มการเทียบวิชา
           </a>
         </div>
+      </header>
+
+      <main className="max-w-6xl mx-auto px-4 py-12">
+        <h2 className="text-2xl font-bold text-center mb-8">
+          หลักสูตรภาคปกติและภาคพิเศษ
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+          <div className="bg-white shadow-md border rounded-lg p-6">
+            <h3 className="text-xl font-semibold mb-4 text-blue-700">
+              ภาคปกติ
+            </h3>
+            <ul className="list-disc list-inside space-y-2">
+              <li>เรียนในวันจันทร์ - ศุกร์ (เช้า-บ่าย)</li>
+              <li>เหมาะสำหรับนักเรียนที่กำลังจะ จบ.6 หรือเทียบเท่า</li>
+              <li>ค่าใช้จ่ายขึ้นอยู่กับแต่ละสาขา</li>
+              <li>สามารถกู้กยศ./กรอ.ได้</li>
+            </ul>
+          </div>
+          <div className="bg-white shadow-md border rounded-lg p-6">
+            <h3 className="text-xl font-semibold mb-4 text-purple-700">
+              ภาคพิเศษ
+            </h3>
+            <ul className="list-disc list-inside space-y-2">
+              <li>เรียนวันเสาร์ - อาทิตย์ หรือภาคค่ำ</li>
+              <li>เหมาะสำหรับผู้ที่ทำงานประจำ หรือผู้มีเวลาจำกัด</li>
+              <li>ค่าใช้จ่ายขึ้นอยู่กับแต่ละสาขา</li>
+              <li>สามารถขอผ่อนชำระกับสถานศึกษาได้</li>
+            </ul>
+          </div>
+        </div>
+
+        <section id="start-section">
+          <h2 className="text-2xl font-bold text-center mb-8">
+            สาขาที่น่าสนใจ
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <a
+              href="computer"
+              className="bg-white border shadow-sm rounded-lg p-6 text-center hover:shadow-md transition"
+            >
+              <div className="text-4xl mb-2">💻</div>
+              <h4 className="text-lg font-semibold">วิศวกรรมคอมพิวเตอร์</h4>
+              <p className="text-gray-600">วิศวกรรมศาสตร์และเทคโนโลยี</p>
+            </a>
+            <a
+              href="#"
+              className="bg-white border shadow-sm rounded-lg p-6 text-center hover:shadow-md transition"
+            >
+              <div className="text-4xl mb-2">⚡️</div>
+              <h4 className="text-lg font-semibold">วิศวกรรมไฟฟ้า</h4>
+              <p className="text-gray-600">วิศวกรรมศาสตร์และเทคโนโลยี</p>
+            </a>
+            <a
+              href="#"
+              className="bg-white border shadow-sm rounded-lg p-6 text-center hover:shadow-md transition"
+            >
+              <div className="text-4xl mb-2">🤖</div>
+              <h4 className="text-lg font-semibold">วิศวกรรมเมคคาทรอนิกส์</h4>
+              <p className="text-gray-600">วิศวกรรมศาสตร์และเทคโนโลยี</p>
+            </a>
+          </div>
+        </section>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+
+      <section id="bout-section" className="bg-gray-100 py-12 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-2xl font-bold mb-4">เกี่ยวกับเรา</h2>
+          <p className="text-gray-700 leading-relaxed">
+            มหาวิทยาลัยได้มุ่งมั่นในการสร้างบุคลากรที่มีคุณภาพ
+            และสามารถปรับตัวได้ในอนาคต เรามีหลากหลายสาขามากมาย ทั้งวิศวกรรม
+            คอมพิวเตอร์ และอื่นๆ
+            ที่ตอบโจทย์ความต้องการของตลาดแรงงานและการพัฒนาประเทศ
+          </p>
+        </div>
+      </section>
+
+      <footer className="bg-blue-900 text-white py-8 px-4">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center space-y-6 md:space-y-0">
+          <div>
+            <h4 className="text-lg font-semibold">มหาวิทยาลัยตัวอย่าง</h4>
+            <p>123 ถนนการศึกษา ตำบลดาวเรือง จังหวัดกาฬสินธุ์ 40000</p>
+          </div>
+          <div className="text-sm">
+            <p>&copy; 2025 มหาวิทยาลัยกาฬสินธุ์. สงวนลิขสิทธิ์</p>
+          </div>
+        </div>
       </footer>
-    </div>
+    </>
   );
 }
