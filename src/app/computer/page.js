@@ -1,61 +1,23 @@
 "use client";
-import React, { useState, useEffect, Fragment } from "react";
-import { supabase } from "@/lib/supabaseClient";
 
-export default function CourseExplorer() {
+import React, { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import CourseSidebar from "./component/CourseSidebar";
+import CourseTable from "./component/CourseTable";
+import CourseInputForm from "./component/CourseInputForm";
+
+export default function CourseExplorerPage() {
   const [groups, setGroups] = useState({});
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [visibleDesc, setVisibleDesc] = useState({});
   const [loading, setLoading] = useState(false);
-
-  // For input form (not saved)
   const [inputs, setInputs] = useState({
     code: "",
     name: "",
     description: "",
   });
-
-  const checkCourseWithAI = async () => {
-    if (
-      !inputs.code.trim() ||
-      !inputs.name.trim() ||
-      !inputs.description.trim()
-    ) {
-      alert("กรุณากรอกข้อมูลให้ครบถ้วน");
-      return;
-    }
-    setLoading(true);
-    try {
-      const response = await fetch("/api/api_ce_course", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ inputCourse: inputs }),
-      });
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        console.error("API responded with error:", response.status, errorBody);
-        throw new Error("Response not ok");
-      }
-
-      const data = await response.json();
-      if (data.course_code && data.course_name) {
-        alert(
-          `รหัสวิชา: ${data.course_code}\nชื่อวิชา: ${data.course_name}\n${
-            data.message || ""
-          }`
-        );
-      } else {
-        alert(data.message || "ไม่พบวิชาที่คล้ายกัน");
-      }
-    } catch (error) {
-      alert("เกิดข้อผิดพลาด");
-      console.error("Error in checkCourseWithAI:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  const [similarCourses, setSimilarCourses] = useState([]);
+  const [aiMessage, setAiMessage] = useState("");
   useEffect(() => {
     async function fetchCourses() {
       const { data, error } = await supabase
@@ -69,7 +31,6 @@ export default function CourseExplorer() {
         return;
       }
 
-      // Group by course_type
       const grouped = data.reduce((acc, c) => {
         acc[c.course_group] = acc[c.course_group] || [];
         acc[c.course_group].push(c);
@@ -90,10 +51,45 @@ export default function CourseExplorer() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setInputs((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setInputs((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const checkCourseWithAI = async () => {
+    if (!inputs.code || !inputs.name || !inputs.description) {
+      alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+      return;
+    }
+
+    setLoading(true);
+    setSimilarCourses([]);
+    setAiMessage("");
+
+    try {
+      const response = await fetch("/api/api_ce_course", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inputCourse: inputs }),
+      });
+
+      const data = await response.json();
+
+      if (
+        data.found &&
+        Array.isArray(data.similar_courses) &&
+        data.similar_courses.length > 0
+      ) {
+        setSimilarCourses(data.similar_courses);
+        setAiMessage(data.message || "AI พบวิชาคล้ายกัน");
+      } else {
+        setSimilarCourses([]);
+        setAiMessage(data.message || "ไม่พบวิชาที่คล้ายกัน");
+      }
+    } catch (error) {
+      setAiMessage("เกิดข้อผิดพลาด");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -104,35 +100,12 @@ export default function CourseExplorer() {
         </h3>
 
         <div className="flex flex-col md:flex-row gap-6">
-          {/* Sidebar */}
-          <aside className="md:w-1/4 bg-white/80 shadow-lg rounded-2xl p-6 border border-blue-100">
-            <h4 className="font-bold text-xl mb-4 text-blue-800 flex items-center gap-2">
-              <span>📚</span> หมวดหมู่รายวิชา
-            </h4>
-            <div className="space-y-2">
-              {Object.keys(groups).map((type) => (
-                <button
-                  key={type}
-                  onClick={() => setSelectedGroup(type)}
-                  className={`flex items-center w-full text-left px-4 py-2 rounded-lg transition font-medium shadow-sm
-                  ${
-                    selectedGroup === type
-                      ? "bg-blue-600 text-white ring-2 ring-blue-300"
-                      : "bg-blue-50 hover:bg-blue-100 text-blue-800"
-                  }
-                `}
-                >
-                  <span className="mr-2">📂</span>
-                  <span className="flex-1">{type}</span>
-                  <span className="bg-blue-200 text-blue-800 rounded-full px-2 py-0.5 text-xs ml-2">
-                    {groups[type].length}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </aside>
+          <CourseSidebar
+            groups={groups}
+            selectedGroup={selectedGroup}
+            onSelectGroup={setSelectedGroup}
+          />
 
-          {/* Main Content */}
           <main className="md:w-3/4 bg-white/90 shadow-xl rounded-2xl p-6 border border-blue-100">
             {selectedGroup ? (
               <>
@@ -140,55 +113,11 @@ export default function CourseExplorer() {
                   <span>🗂️</span> {selectedGroup}
                 </h4>
 
-                <div className="overflow-x-auto rounded-lg border border-blue-100 mb-4">
-                  <table className="table-auto w-full text-sm">
-                    <thead className="bg-blue-100 text-blue-900">
-                      <tr>
-                        <th className="p-3">รหัสวิชา</th>
-                        <th className="p-3">ประเภท</th>
-                        <th className="p-3">ชื่อวิชา</th>
-                        <th className="p-3">หน่วยกิจกำหนด</th>
-                        <th className="p-3 text-center">คำอธิบาย</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {groups[selectedGroup].map((c, idx) => (
-                        <Fragment key={c.id}>
-                          <tr
-                            className={`transition ${
-                              idx % 2 === 0 ? "bg-white" : "bg-blue-50"
-                            } hover:bg-blue-200/40`}
-                          >
-                            <td className="p-3">{c.course_code}</td>
-                            <td className="p-3">{c.course_type}</td>
-                            <td className="p-3">{c.course_name}</td>
-                            <td className="p-3">{c.credit_structure}</td>
-                            <td className="p-3 text-center">
-                              <button
-                                onClick={() => toggleDesc(c.id)}
-                                title="ดูคำอธิบาย"
-                                className="text-blue-600 hover:text-blue-900 transition text-lg"
-                              >
-                                {visibleDesc[c.id] ? "🔽" : "🔍"}
-                              </button>
-                            </td>
-                          </tr>
-                          {visibleDesc[c.id] && (
-                            <tr className="bg-blue-50">
-                              <td
-                                colSpan={5}
-                                className="p-4 border-t text-blue-900"
-                              >
-                                <strong>คำอธิบาย:</strong>{" "}
-                                {c.description || "ไม่มีคำอธิบาย"}
-                              </td>
-                            </tr>
-                          )}
-                        </Fragment>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <CourseTable
+                  courses={groups[selectedGroup]}
+                  visibleDesc={visibleDesc}
+                  toggleDesc={toggleDesc}
+                />
               </>
             ) : (
               <div className="flex flex-col items-center justify-center h-40 text-blue-400">
@@ -197,59 +126,48 @@ export default function CourseExplorer() {
               </div>
             )}
 
-            {/* Input Form */}
-            <section className="mt-10 bg-gradient-to-r from-blue-50 to-white p-6 border rounded-2xl shadow-inner">
-              <h4 className="font-bold text-xl mb-4 text-blue-700 flex items-center gap-2">
-                <span>📝</span> กรอกข้อมูล (ไม่บันทึก)
-              </h4>
+            <CourseInputForm
+              inputs={inputs}
+              onChange={handleInputChange}
+              onSubmit={checkCourseWithAI}
+              loading={loading}
+            />
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
-                <input
-                  name="code"
-                  value={inputs.code}
-                  onChange={handleInputChange}
-                  placeholder="รหัสวิชา"
-                  className="border border-blue-200 p-3 rounded-lg focus:ring-2 focus:ring-blue-300 outline-none bg-white shadow-sm"
-                />
-                <input
-                  name="name"
-                  value={inputs.name}
-                  onChange={handleInputChange}
-                  placeholder="ชื่อวิชา"
-                  className="border border-blue-200 p-3 rounded-lg focus:ring-2 focus:ring-blue-300 outline-none bg-white shadow-sm"
-                />
-                <input
-                  name="description"
-                  value={inputs.description}
-                  onChange={handleInputChange}
-                  placeholder="คำอธิบายรายวิชา"
-                  className="border border-blue-200 p-3 rounded-lg focus:ring-2 focus:ring-blue-300 outline-none bg-white shadow-sm"
-                />
-              </div>
+            {/* แสดงข้อความจาก AI */}
+            {aiMessage && (
+              <p className="mt-6 text-blue-700 font-semibold">{aiMessage}</p>
+            )}
 
-              <button
-                onClick={checkCourseWithAI}
-                disabled={loading}
-                className={`flex items-center gap-2 px-6 py-3 rounded-lg text-white font-semibold shadow-lg transition
-                ${
-                  loading
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800"
-                }
-              `}
-              >
-                {loading ? (
-                  <>
-                    <span className="animate-spin inline-block mr-2">⏳</span>
-                    กำลังวิเคราะห์...
-                  </>
-                ) : (
-                  <>
-                    <span>🤖</span> เริ่มวิเคราะห์
-                  </>
-                )}
-              </button>
-            </section>
+            {/* แสดงตารางวิชาคล้ายกัน */}
+            {similarCourses.length > 0 && (
+              <table className="w-full mt-4 border border-blue-300 rounded-lg overflow-hidden text-left">
+                <thead className="bg-blue-100">
+                  <tr>
+                    <th className="p-3 border-b border-blue-300">ลำดับ</th>
+                    <th className="p-3 border-b border-blue-300">รหัสวิชา</th>
+                    <th className="p-3 border-b border-blue-300">ชื่อวิชา</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {similarCourses.map((course, index) => (
+                    <tr
+                      key={course.course_code}
+                      className="odd:bg-white even:bg-blue-50"
+                    >
+                      <td className="p-3 border-b border-blue-300">
+                        {index + 1}
+                      </td>
+                      <td className="p-3 border-b border-blue-300">
+                        {course.course_code}
+                      </td>
+                      <td className="p-3 border-b border-blue-300">
+                        {course.course_name}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </main>
         </div>
       </div>
