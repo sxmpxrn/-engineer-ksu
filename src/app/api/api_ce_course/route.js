@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 
-// ใช้ env ที่ถูกต้อง
 if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
   throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables");
 }
@@ -16,7 +15,7 @@ const supabase = createClient(
 
 const openai = new OpenAI({
   apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
-  baseURL: "https://api.opentyphoon.ai/v1",
+  baseURL: "https://openrouter.ai/api/v1",
 });
 
 export async function POST(req) {
@@ -31,31 +30,7 @@ export async function POST(req) {
       return Response.json({ error: "ข้อมูลที่ส่งมาไม่ถูกต้อง" }, { status: 400 });
     }
 
-    // 1. ตรวจสอบ ce_course_check
-    const { data: checkRows, error: checkError } = await supabase
-  .from("ce_course_check")
-  .select("course_code_check, course_name_check")
-  .match({
-    course_code_check: inputCourse.code,
-    course_name_check: inputCourse.name,
-  });
-
-    if (checkError) {
-      console.error("Supabase checkError:", checkError); // เพิ่มบรรทัดนี้
-      return Response.json({ error: "เกิดข้อผิดพลาดในการตรวจสอบ", detail: checkError.message }, { status: 500 });
-    }
-
-    if (checkRows && checkRows.length > 0) {
-      // พบใน ce_course_check
-      return Response.json({
-        course_code: checkRows[0].course_code,
-        course_name: checkRows[0].course_name,
-        found: true,
-        message: "พบในฐานข้อมูล"
-      });
-    }
-
-    // 2. ใช้ AI Typhoon ตรวจสอบกับ ce_course (เน้น description)
+    // ดึงวิชาทั้งหมดจาก ce_course
     const { data: allCourses, error: ceError } = await supabase
       .from("ce_course")
       .select("course_code, course_name, description")
@@ -65,26 +40,30 @@ export async function POST(req) {
       return Response.json({ error: "เกิดข้อผิดพลาดในการดึง ce_course" }, { status: 500 });
     }
 
+    // ✅ PROMPT ใหม่
     const prompt = `
-รหัสวิชา: ${inputCourse.code}
-ชื่อวิชา: ${inputCourse.name}
-คำอธิบาย: ${inputCourse.description}
+โปรดตรวจสอบว่ารายวิชาใหม่ด้านล่างนี้มีความคล้ายกับรายวิชาใดในระบบหรือไม่ โดยพิจารณาจากคำอธิบายรายวิชาเป็นหลัก
 
-รายการวิชาในระบบ:
-${allCourses.map((c, i) => `(${i + 1}) ${c.course_code} - ${c.course_name}: ${c.description}`).join("\n")}
+📌 รายวิชาใหม่:
+- รหัสวิชา: ${inputCourse.code}
+- ชื่อวิชา: ${inputCourse.name}
+- คำอธิบาย: ${inputCourse.description}
 
-คำถาม: จากรายการข้างต้น มีวิชาใดที่ description ตรงหรือคล้ายกับวิชาที่ผู้ใช้เพิ่มหรือไม่?
+📚 รายวิชาในระบบ:
+${allCourses.map((c, i) => `(${i + 1}) ${c.course_code} - ${c.course_name}\nคำอธิบาย: ${c.description}`).join("\n\n")}
 
-❗ ตอบในรูปแบบ:
-รหัสวิชา: <CODE>
-ชื่อวิชา: <NAME>
+กรุณาตอบกลับโดยใช้รูปแบบดังนี้:
 
-ถ้าไม่มีวิชาคล้ายกัน ตอบเฉพาะ:
+ถ้าพบรายวิชาคล้ายกัน:
+รหัสวิชา: <รหัสวิชาที่คล้ายกัน>
+ชื่อวิชา: <ชื่อวิชาที่คล้ายกัน>
+
+ถ้าไม่พบวิชาคล้ายกัน:
 ไม่พบวิชาที่คล้ายกัน
-`;
+    `.trim();
 
     const completion = await openai.chat.completions.create({
-      model: "typhoon-v2.1-12b-instruct",
+      model: "meta-llama/Llama-3.3-70B-Instruct:free",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
       max_tokens: 500,
@@ -101,20 +80,10 @@ ${allCourses.map((c, i) => `(${i + 1}) ${c.course_code} - ${c.course_name}: ${c.
     }
 
     if (matchedCode && matchedName) {
-      // เพิ่มเข้า ce_course_check
-      await supabase.from("ce_course_check").insert([
-  {
-    course_code: matchedCode,
-    course_name: matchedName,
-    course_code_check: inputCourse.code,
-    course_name_check: inputCourse.name,
-  },
-]);
-
       return Response.json({
         course_code: matchedCode,
         course_name: matchedName,
-        found: false,
+        found: true,
         message: "AI พบวิชาคล้ายกัน"
       });
     } else {

@@ -1,8 +1,0 @@
-@import url("https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap");
-body {
-  font-family: "Sarabun", sans-serif;
-}
-.drag-over {
-  border-color: #3b82f6 !important;
-  background-color: #eff6ff !important;
-}
