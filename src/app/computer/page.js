@@ -21,9 +21,9 @@ export default function CourseExplorerPage() {
   useEffect(() => {
     async function fetchCourses() {
       const { data, error } = await supabase
-        .from("ce_course")
+        .from("ce_courses")
         .select(
-          "id, course_group, course_type, course_code, course_name, credit_structure, description"
+          "id, course_group, course_code, course_name, credit_structure, description"
         );
 
       if (error) {
@@ -70,19 +70,23 @@ export default function CourseExplorerPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ inputCourse: inputs }),
       });
-
-      const data = await response.json();
-
-      if (
-        data.found &&
-        Array.isArray(data.similar_courses) &&
-        data.similar_courses.length > 0
-      ) {
-        setSimilarCourses(data.similar_courses);
-        setAiMessage(data.message || "AI พบวิชาคล้ายกัน");
-      } else {
-        setSimilarCourses([]);
-        setAiMessage(data.message || "ไม่พบวิชาที่คล้ายกัน");
+      const text = await response.text();
+      try {
+        const data = JSON.parse(text);
+        if (
+          data.found &&
+          Array.isArray(data.similar_courses) &&
+          data.similar_courses.length > 0
+        ) {
+          setSimilarCourses(data.similar_courses);
+          setAiMessage(data.message || "AI พบวิชาคล้ายกัน");
+        } else {
+          setSimilarCourses([]);
+          setAiMessage(data.message || "ไม่พบวิชาที่คล้ายกัน");
+        }
+      } catch (e) {
+        console.error("API response is not JSON:", text);
+        setAiMessage("เกิดข้อผิดพลาดที่ API");
       }
     } catch (error) {
       setAiMessage("เกิดข้อผิดพลาด");
@@ -146,12 +150,15 @@ export default function CourseExplorerPage() {
                     <th className="p-3 border-b border-blue-300">ลำดับ</th>
                     <th className="p-3 border-b border-blue-300">รหัสวิชา</th>
                     <th className="p-3 border-b border-blue-300">ชื่อวิชา</th>
+                    <th className="p-3 border-b border-blue-300">ความคล้าย</th>
                   </tr>
                 </thead>
                 <tbody>
                   {similarCourses.map((course, index) => (
                     <tr
-                      key={course.course_code}
+                      key={`${course.course_code}-${
+                        course.source_model || index
+                      }`}
                       className="odd:bg-white even:bg-blue-50"
                     >
                       <td className="p-3 border-b border-blue-300">
@@ -162,6 +169,12 @@ export default function CourseExplorerPage() {
                       </td>
                       <td className="p-3 border-b border-blue-300">
                         {course.course_name}
+                      </td>
+                      <td className="p-3 border-b border-blue-300">
+                        {course.similarity !== null &&
+                        course.similarity !== undefined
+                          ? `${course.similarity}%`
+                          : "-"}
                       </td>
                     </tr>
                   ))}
